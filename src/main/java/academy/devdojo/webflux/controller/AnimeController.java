@@ -2,6 +2,7 @@ package academy.devdojo.webflux.controller;
 
 import academy.devdojo.webflux.domain.Anime;
 import academy.devdojo.webflux.service.AnimeService;
+import java.util.List;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,12 @@ public class AnimeController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Anime> save(@Valid @RequestBody Anime anime){
         return animeService.save(anime);
+    }
+
+    @PostMapping("batch")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Flux<Anime> batchSave(@RequestBody List<Anime> animes){
+        return animeService.saveAll(animes);
     }
 
     @PutMapping(path = "{id}")
