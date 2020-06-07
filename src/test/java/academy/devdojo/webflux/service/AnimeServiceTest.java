@@ -3,6 +3,7 @@ package academy.devdojo.webflux.service;
 import academy.devdojo.webflux.domain.Anime;
 import academy.devdojo.webflux.repository.AnimeRepository;
 import academy.devdojo.webflux.util.AnimeCreator;
+import java.util.List;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
@@ -50,6 +51,10 @@ class AnimeServiceTest {
 
         BDDMockito.when(animeRepositoryMock.save(AnimeCreator.createAnimeToBeSaved()))
             .thenReturn(Mono.just(anime));
+
+        BDDMockito.when(animeRepositoryMock
+            .saveAll(List.of(AnimeCreator.createAnimeToBeSaved(), AnimeCreator.createAnimeToBeSaved())))
+            .thenReturn(Flux.just(anime, anime));
 
         BDDMockito.when(animeRepositoryMock.delete(ArgumentMatchers.any(Anime.class)))
             .thenReturn(Mono.empty());
@@ -114,6 +119,34 @@ class AnimeServiceTest {
             .expectNext(anime)
             .verifyComplete();
     }
+
+    @Test
+    @DisplayName("saveAll creates a list of anime when successful")
+    public void saveAll_CreatesListOfAnime_WhenSuccessful() {
+        Anime animeToBeSaved = AnimeCreator.createAnimeToBeSaved();
+
+        StepVerifier.create(animeService.saveAll(List.of(animeToBeSaved, animeToBeSaved)))
+            .expectSubscription()
+            .expectNext(anime, anime)
+            .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("saveAll returns Mono error when one of the objects in the list contains empty or null name")
+    public void saveAll_ReturnsMonoError_WhenContainsInvalidName() {
+        Anime animeToBeSaved = AnimeCreator.createAnimeToBeSaved();
+
+        BDDMockito.when(animeRepositoryMock
+            .saveAll(ArgumentMatchers.anyIterable()))
+            .thenReturn(Flux.just(anime, anime.withName("")));
+
+        StepVerifier.create(animeService.saveAll(List.of(animeToBeSaved, animeToBeSaved.withName(""))))
+            .expectSubscription()
+            .expectNext(anime)
+            .expectError(ResponseStatusException.class)
+            .verify();
+    }
+
 
     @Test
     @DisplayName("delete removes the anime when successful")
